@@ -1,5 +1,7 @@
 import pygame
 from network import Network
+import time
+import ast
 
 
 class Player():
@@ -11,8 +13,13 @@ class Player():
         self.velocity = 2
         self.color = color
 
-    def draw(self, g):
+    def draw(self, g, flag=False):
+        if flag:
+            self.color = (0,255,0)
         pygame.draw.rect(g, self.color ,(self.x, self.y, self.width, self.height), 0)
+
+
+
 
     def move(self, dirn):
         """
@@ -33,7 +40,7 @@ class Player():
 class Game:
 
     def setup_canvas(self):
-        canvas_text = "Block Race"
+        canvas_text = "Testing..."
         self.canvas = Canvas(self.width, self.height, canvas_text)
 
     def __init__(self, w, h):
@@ -42,8 +49,7 @@ class Game:
         self.height = h
         self.player = Player(50, 50)
         self.player2 = Player(100,100)
-        self.winnerx = 0
-        self.winnery = 0
+        self.color=(0,0,255)
         if(self.net.connected):
             print("starting game")
             self.setup_canvas()
@@ -51,6 +57,7 @@ class Game:
     def run(self):
         clock = pygame.time.Clock()
         run = True
+        flag = False
         while run:
             clock.tick(60)
 
@@ -68,7 +75,7 @@ class Game:
                     self.player.move(0)
                     if(self.player.x == 0 and self.player.y == 0):
                         print("winner")
-                        run = False
+                        flag = True
 
 
             if keys[pygame.K_LEFT]:
@@ -76,49 +83,64 @@ class Game:
                     self.player.move(1)
                     if(self.player.x == 0 and self.player.y == 0):
                         print("winner")
-                        run = False
+                        flag = True
 
             if keys[pygame.K_UP]:
                 if self.player.y >= self.player.velocity:
                     self.player.move(2)
                     if(self.player.x == 0 and self.player.y == 0):
                         print("winner")
-                        run = False
+                        flag = True
 
             if keys[pygame.K_DOWN]:
                 if self.player.y <= self.height - self.player.velocity:
                     self.player.move(3)
                     if(self.player.x == 0 and self.player.y == 0):
                         print("winner")
-                        run = False
+                        flag = True
 
             # Send Network Stuff
-            self.player2.x, self.player2.y = self.parse_data(self.send_data())
-
+            self.player2.x, self.player2.y, self.player2.color = self.parse_data(self.send_data(flag), (0,0,255))
+            
             # Update Canvas
             self.canvas.draw_background()
-            self.player.draw(self.canvas.get_canvas())
+            self.player.draw(self.canvas.get_canvas(), flag)
             self.player2.draw(self.canvas.get_canvas())
             self.canvas.update()
+            if flag:
+                time.sleep(5)
+                run = False
 
         pygame.quit()
+    
 
-    def send_data(self):
+    def send_data(self, flag):
         """
         Send position to server
         :return: None
         """
-        data = str(self.net.id) + ":" + str(self.player.x) + "," + str(self.player.y)
+        if flag:
+            color = (3,3,3)
+        else:
+            color = (255,193,37)
+        data = str(self.net.id) + ":" + str(self.player.x) + "|" + str(self.player.y) + "|" + str(color)
+
         reply = self.net.send(data)
         return reply
 
     @staticmethod
-    def parse_data(data):
+    def parse_data(data, color):
         try:
-            d = data.split(":")[1].split(",")
-            return int(d[0]), int(d[1])
-        except:
-            return 0,0
+            d = data.split(":")[1].split("|")
+            # if len(d)==3:
+            #     self.color = d[2]
+            if len(d)==3:
+                color = ast.literal_eval(d[2])
+            return int(d[0]), int(d[1]), color
+
+
+        except Exception as e:
+            return 50,50, color
 
 
 class Canvas:
