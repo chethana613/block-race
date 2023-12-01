@@ -40,7 +40,7 @@ class Player():
 class Game:
 
     def setup_canvas(self):
-        canvas_text = "Testing..."
+        canvas_text = "Block Race"
         self.canvas = Canvas(self.width, self.height, canvas_text)
 
     def __init__(self, w, h):
