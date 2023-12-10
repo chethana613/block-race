@@ -50,7 +50,11 @@ class Game:
         self.player = Player(50, 50)
         self.player2 = Player(100,100)
         self.color=(0,0,255)
+        print("jjjjjjjjjjjjjjjjjjj")
+        print(self.net.connected)
         if(self.net.connected):
+            print("******************")
+            pygame.init()
             print("starting game")
             self.setup_canvas()
 
